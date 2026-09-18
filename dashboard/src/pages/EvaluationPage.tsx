@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
 import { ModelEvaluationData, ApiMeta } from '../types';
 import { DataSourceBadge } from '../components/common/DataSourceBadge';
+import { CsvExportButton } from '../components/common/CsvExportButton';
 import { Cpu, CheckCircle2, AlertTriangle, BarChart2 } from 'lucide-react';
 
 export const EvaluationPage: React.FC = () => {
@@ -15,8 +16,21 @@ export const EvaluationPage: React.FC = () => {
     });
   }, []);
 
+  // Flatten language metrics for CSV Export
+  const exportData = evalData.flatMap(m =>
+    Object.entries(m.languages_eval).map(([lang, val]) => ({
+      model_name: m.model_name,
+      version: m.version,
+      macro_f1: m.macro_f1,
+      language: lang,
+      f1_score: val.f1,
+      eval_samples: val.samples,
+      drift_detected: m.drift_detected
+    }))
+  );
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Model Evaluation Vector">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 panel-card p-5">
         <div>
@@ -30,9 +44,14 @@ export const EvaluationPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-          Drift Status: <span className="text-emerald-400 font-bold">NO DRIFT DETECTED</span>
-        </div>
+        {meta && (
+          <div className="flex items-center gap-3">
+            <CsvExportButton data={exportData} filename="model_evaluation_metrics.csv" meta={meta} />
+            <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+              Drift Status: <span className="text-emerald-400 font-bold">NO DRIFT DETECTED</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Model Cards */}
@@ -73,18 +92,18 @@ export const EvaluationPage: React.FC = () => {
               <span className="text-xs font-mono text-slate-400">Model: {m.model_name} ({m.version})</span>
             </div>
 
-            <table className="w-full text-left text-xs font-mono">
+            <table className="w-full text-left text-xs font-mono" role="table" aria-label="Language F1 breakdown">
               <thead className="bg-slate-900 text-slate-400 uppercase text-[10px] border-b border-slate-800">
                 <tr>
-                  <th className="px-4 py-2.5">Language / Code-Switch</th>
-                  <th className="px-4 py-2.5 text-right">F1 Score</th>
-                  <th className="px-4 py-2.5 text-right">Eval Samples N</th>
-                  <th className="px-4 py-2.5 text-center">Status</th>
+                  <th scope="col" className="px-4 py-2.5">Language / Code-Switch</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">F1 Score</th>
+                  <th scope="col" className="px-4 py-2.5 text-right">Eval Samples N</th>
+                  <th scope="col" className="px-4 py-2.5 text-center">Status</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 text-slate-300">
                 {Object.entries(m.languages_eval).map(([lang, val]) => (
-                  <tr key={lang} className="hover:bg-slate-900/60">
+                  <tr key={lang} tabIndex={0} className="hover:bg-slate-900/60 focus:outline-none focus:ring-2 focus:ring-cyan-400">
                     <td className="px-4 py-3 font-bold text-white uppercase">{lang}</td>
                     <td className="px-4 py-3 text-right font-bold text-cyan-400">{val.f1.toFixed(3)}</td>
                     <td className="px-4 py-3 text-right">{val.samples.toLocaleString()}</td>

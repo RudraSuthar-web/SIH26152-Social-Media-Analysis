@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
 import { CascadeNode, ApiMeta } from '../types';
 import { DataSourceBadge } from '../components/common/DataSourceBadge';
+import { CsvExportButton } from '../components/common/CsvExportButton';
 import { GitBranch, CornerDownRight, ShieldCheck, Share2 } from 'lucide-react';
 
 export const PropagationPage: React.FC = () => {
@@ -15,10 +16,32 @@ export const PropagationPage: React.FC = () => {
     });
   }, []);
 
+  const flattenCascade = (node: CascadeNode | null): any[] => {
+    if (!node) return [];
+    const list = [{
+      id: node.id,
+      event_id: node.event_id,
+      node_id: node.node_id,
+      platform: node.platform,
+      depth: node.depth,
+      provenance: node.provenance,
+      timestamp: node.timestamp
+    }];
+    if (node.children) {
+      node.children.forEach(child => {
+        list.push(...flattenCascade(child));
+      });
+    }
+    return list;
+  };
+
   const renderCascadeTree = (node: CascadeNode) => {
     return (
       <div key={node.id} className="space-y-3 pl-4 border-l-2 border-slate-800 my-2">
-        <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5 hover:border-cyan-500/40 transition-all font-mono text-xs">
+        <div
+          tabIndex={0}
+          className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 space-y-1.5 hover:border-cyan-500/40 transition-all font-mono text-xs focus:outline-none focus:ring-2 focus:ring-cyan-400"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <CornerDownRight className="w-3.5 h-3.5 text-cyan-400" />
@@ -44,8 +67,10 @@ export const PropagationPage: React.FC = () => {
     );
   };
 
+  const cascadeList = flattenCascade(cascade);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Propagation Vector">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 panel-card p-5">
         <div>
@@ -59,9 +84,14 @@ export const PropagationPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-          Traceability: <span className="text-cyan-400 font-bold">SOUL.md §17 Standard</span>
-        </div>
+        {meta && (
+          <div className="flex items-center gap-3">
+            <CsvExportButton data={cascadeList} filename="propagation_cascade.csv" meta={meta} />
+            <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+              Traceability: <span className="text-cyan-400 font-bold">SOUL.md §17 Standard</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Cascade Inspector */}

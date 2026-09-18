@@ -1,7 +1,9 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import { AnalyticsProvider, useAnalytics } from './context/AnalyticsContext';
 import { Layout } from './components/layout/Layout';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { PageSkeleton } from './components/common/PageSkeleton';
+
 import { OverviewPage } from './pages/OverviewPage';
 import { SentimentPage } from './pages/SentimentPage';
 import { DemographicsPage } from './pages/DemographicsPage';
@@ -39,7 +41,9 @@ const AppContent: React.FC = () => {
   return (
     <Layout>
       <ErrorBoundary>
-        {renderActiveTab()}
+        <Suspense fallback={<PageSkeleton />}>
+          {renderActiveTab()}
+        </Suspense>
       </ErrorBoundary>
     </Layout>
   );

@@ -1,2 +1,63 @@
+# Node & Frontend dependencies
 node_modules/
 **/node_modules/
+dist/
+**/dist/
+build/
+.output/
+.next/
+.vite/
+*.tsbuildinfo
+
+# Python Virtual Environments & Cache
+.venv/
+**/.venv/
+venv/
+env/
+ENV/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/
+
+# Databases & Local Data Stores
+*.db
+*.sqlite
+*.sqlite3
+**/social_analytics.db
+postgres_data/
+redis_data/
+
+# Sensitive Secrets & Environment Variables
+backend/secrets/*
+!backend/secrets/.gitkeep
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+*.crt
+
+# Logs & Temporary Files
+*.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+tmp/
+temp/
+
+# IDE & System Files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

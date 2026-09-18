@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/api';
 import { AdapterHealth, ModelHealth, DeadLetterEntry, ApiMeta } from '../types';
+import { RateLimitBurnChart } from '../components/charts/quality/RateLimitBurnChart';
+import { ModelLatencyPercentiles } from '../components/charts/quality/ModelLatencyPercentiles';
 import { DataSourceBadge } from '../components/common/DataSourceBadge';
+import { CsvExportButton } from '../components/common/CsvExportButton';
 import { Activity, ShieldAlert, Cpu, RefreshCw, CheckCircle2, AlertTriangle, AlertOctagon } from 'lucide-react';
 
 export const DataQualityPage: React.FC = () => {
@@ -31,7 +34,7 @@ export const DataQualityPage: React.FC = () => {
   const sysStatus = computeSystemStatus();
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Data Sentinel & Telemetry Control Vector">
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 panel-card p-5">
         <div>
@@ -45,9 +48,12 @@ export const DataQualityPage: React.FC = () => {
           </p>
         </div>
 
-        <div className={`px-3.5 py-1.5 rounded-lg border font-mono text-xs font-bold flex items-center gap-2 ${sysStatus.color}`}>
-          <CheckCircle2 className="w-4 h-4" />
-          <span>System Status: {sysStatus.label}</span>
+        <div className="flex items-center gap-3">
+          {meta && <CsvExportButton data={deadLetters} filename="dlq_quarantine.csv" meta={meta} />}
+          <div className={`px-3.5 py-1.5 rounded-lg border font-mono text-xs font-bold flex items-center gap-2 ${sysStatus.color}`}>
+            <CheckCircle2 className="w-4 h-4" />
+            <span>System Status: {sysStatus.label}</span>
+          </div>
         </div>
       </div>
 
@@ -56,7 +62,8 @@ export const DataQualityPage: React.FC = () => {
         {adapters.map((a) => (
           <div
             key={a.platform}
-            className={`panel-card p-4 space-y-3 ${
+            tabIndex={0}
+            className={`panel-card p-4 space-y-3 focus:outline-none focus:ring-2 focus:ring-cyan-400 ${
               a.status === 'healthy' ? '' : 'border-amber-500/40 bg-amber-950/10'
             }`}
           >
@@ -101,6 +108,12 @@ export const DataQualityPage: React.FC = () => {
         ))}
       </div>
 
+      {/* Expanded Telemetry Charts (CHART_EXPANSION.md) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <RateLimitBurnChart requestId={meta?.request_id} />
+        <ModelLatencyPercentiles requestId={meta?.request_id} />
+      </div>
+
       {/* Model Health Section */}
       <div className="panel-card p-5 space-y-4">
         <div className="pb-3 border-b border-slate-800 flex items-center justify-between">
@@ -112,7 +125,7 @@ export const DataQualityPage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {models.map((m) => (
-            <div key={m.model_name} className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 font-mono text-xs">
+            <div key={m.model_name} tabIndex={0} className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-cyan-400">
               <div className="flex items-center justify-between">
                 <h4 className="font-bold text-white text-xs">{m.model_name}</h4>
                 <span className="text-[10px] text-emerald-400 font-bold uppercase">{m.status}</span>
@@ -145,12 +158,15 @@ export const DataQualityPage: React.FC = () => {
           <h3 className="text-sm font-bold font-mono text-white flex items-center gap-2">
             <ShieldAlert className="w-4 h-4 text-rose-400" /> Dead-Letter Queue (DLQ) Quarantine (SOUL.md §6)
           </h3>
-          <span className="text-xs font-mono text-slate-400">{deadLetters.length} Quarantined Payloads</span>
+          <div className="flex items-center gap-3">
+            {meta && <CsvExportButton data={deadLetters} filename="dlq_quarantine_events.csv" meta={meta} />}
+            <span className="text-xs font-mono text-slate-400">{deadLetters.length} Quarantined Payloads</span>
+          </div>
         </div>
 
         <div className="divide-y divide-slate-800/60 font-mono text-xs">
           {deadLetters.map((dlq) => (
-            <div key={dlq.id} className="p-4 hover:bg-slate-900/50 transition-colors space-y-2">
+            <div key={dlq.id} tabIndex={0} className="p-4 hover:bg-slate-900/50 transition-colors space-y-2 focus:outline-none focus:ring-2 focus:ring-cyan-400">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AlertOctagon className="w-4 h-4 text-rose-400" />
@@ -168,7 +184,7 @@ export const DataQualityPage: React.FC = () => {
                   {dlq.raw_payload_snippet}
                 </code>
 
-                <button className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-mono inline-flex items-center gap-1 transition-colors">
+                <button className="px-3 py-1 rounded bg-slate-800 hover:bg-slate-700 text-white text-[11px] font-mono inline-flex items-center gap-1 transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-400">
                   <RefreshCw className="w-3 h-3" /> Replay Payload
                 </button>
               </div>

@@ -1,0 +1,52 @@
+app:
+  name: "PS 26152 Sovereign Analytics API"
+  environment: "development"
+  log_level: "INFO"
+  api_host: "0.0.0.0"
+  api_port: 8000
+  cors_origins: ["*"]
+  jwt_algorithm: "HS256"
+
+database:
+  url: "sqlite+aiosqlite:///./social_analytics.db"
+  pool_size: 20
+
+redis:
+  url: "redis://localhost:6379/0"
+
+adapters:
+  x:
+    enabled: true
+    provider: "synthetic"  # twitterapi_io | official | synthetic
+    search_query: "(NTRO OR cyber OR security OR hackathon) lang:en OR lang:hi OR lang:gu"
+    rate_limit_rpm: 300
+    synthetic_ratio: 1.0
+  telegram:
+    enabled: true
+    provider: "synthetic"
+    channels: ["@ntro_updates", "@cyber_threat_intel"]
+
+ingestion:
+  batch_size: 100
+  flush_interval_seconds: 5
+  dead_letter_max_retries: 3
+  deduplication_ttl_hours: 168
+
+sentiment:
+  model_name: "cardiffnlp/twitter-xlm-roberta-base-sentiment"
+  version: "v3.1 (ONNX)"
+  confidence_threshold: 0.5
+  device: "cpu"
+
+trends:
+  half_life_hours: 6.0
+  min_volume: 10
+
+network:
+  window_hours: 24
+  pagerank_damping: 0.85
+  community_algorithm: "leiden"
+
+demographics:
+  method_version: "heuristic-v1"
+  confidence_threshold: 0.6

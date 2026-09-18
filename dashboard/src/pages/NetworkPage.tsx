@@ -4,6 +4,8 @@ import { NetworkNode, NetworkEdge, CommunityCluster, ApiMeta } from '../types';
 import { NetworkGraph } from '../components/network/NetworkGraph';
 import { KOLTable } from '../components/network/KOLTable';
 import { CommunityPanel } from '../components/network/CommunityPanel';
+import { CentralityDistribution } from '../components/charts/network/CentralityDistribution';
+import { CommunityTreemap } from '../components/charts/network/CommunityTreemap';
 import { DataSourceBadge } from '../components/common/DataSourceBadge';
 import { CsvExportButton } from '../components/common/CsvExportButton';
 import { Modal } from '../components/common/Modal';
@@ -26,7 +28,7 @@ export const NetworkPage: React.FC = () => {
   }, []);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Network Topology Vector">
       {/* Title Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 panel-card p-5">
         <div>
@@ -81,6 +83,12 @@ export const NetworkPage: React.FC = () => {
 
           <CommunityPanel communities={communities} />
         </div>
+      </div>
+
+      {/* Expanded Charts Row (CHART_EXPANSION.md) */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <CentralityDistribution requestId={meta?.request_id} />
+        <CommunityTreemap communities={communities} requestId={meta?.request_id} />
       </div>
 
       {/* KOL Leaderboard Table */}

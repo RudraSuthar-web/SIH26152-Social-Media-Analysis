@@ -3,6 +3,7 @@ import { apiService } from '../services/api';
 import { OverviewMetrics, CanonicalEvent, TrendTopic, ApiMeta } from '../types';
 import { MetricCard } from '../components/common/MetricCard';
 import { DataSourceBadge } from '../components/common/DataSourceBadge';
+import { CsvExportButton } from '../components/common/CsvExportButton';
 import { Activity, MessageSquare, Users, TrendingUp, ShieldCheck, Flame, ChevronRight, Copy, Check } from 'lucide-react';
 
 export const OverviewPage: React.FC = () => {
@@ -30,7 +31,7 @@ export const OverviewPage: React.FC = () => {
   if (!metrics) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Social Media Intelligence Overview">
       {/* Overview Banner (SOUL.md §21 Compliant) */}
       <div className="panel-card p-6 border-l-4 border-l-cyan-400 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -44,8 +45,11 @@ export const OverviewPage: React.FC = () => {
         </div>
 
         {meta && (
-          <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center gap-2">
-            <span>Request ID: <strong className="text-cyan-400">{meta.request_id}</strong></span>
+          <div className="flex items-center gap-3">
+            <CsvExportButton data={events} filename="canonical_events_stream.csv" meta={meta} />
+            <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 flex items-center gap-2">
+              <span>Request ID: <strong className="text-cyan-400">{meta.request_id}</strong></span>
+            </div>
           </div>
         )}
       </div>
@@ -97,16 +101,20 @@ export const OverviewPage: React.FC = () => {
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">Auditable events with full event_id provenance</p>
             </div>
-            <span className="text-xs font-mono text-cyan-400 font-semibold bg-cyan-950 px-2.5 py-1 rounded-full border border-cyan-800/50">
-              {events.length} Events Active
-            </span>
+            <div className="flex items-center gap-3">
+              {meta && <CsvExportButton data={events} filename="event_stream.csv" meta={meta} />}
+              <span className="text-xs font-mono text-cyan-400 font-semibold bg-cyan-950 px-2.5 py-1 rounded-full border border-cyan-800/50">
+                {events.length} Events Active
+              </span>
+            </div>
           </div>
 
           <div className="space-y-3 max-h-[460px] overflow-y-auto pr-1">
             {events.map((evt) => (
               <div
                 key={evt.event_id}
-                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/30 transition-all space-y-2.5"
+                tabIndex={0}
+                className="p-4 rounded-xl bg-slate-900/60 border border-slate-800 hover:border-cyan-500/30 transition-all space-y-2.5 focus:outline-none focus:ring-2 focus:ring-cyan-400"
               >
                 <div className="flex items-center justify-between text-xs font-mono">
                   <div className="flex items-center gap-2">
@@ -120,8 +128,9 @@ export const OverviewPage: React.FC = () => {
                     <span className="text-slate-500 text-[10px]">{new Date(evt.event_timestamp).toLocaleTimeString()}</span>
                     <button
                       onClick={() => handleCopy(evt.event_id)}
-                      className="p-1 text-slate-400 hover:text-white"
+                      className="p-1 text-slate-400 hover:text-white focus:ring-2 focus:ring-cyan-400 focus:outline-none rounded"
                       title="Copy Event ID"
+                      aria-label="Copy event ID to clipboard"
                     >
                       {copiedId === evt.event_id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                     </button>

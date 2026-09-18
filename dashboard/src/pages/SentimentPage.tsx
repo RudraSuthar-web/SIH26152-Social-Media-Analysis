@@ -4,9 +4,12 @@ import { apiService } from '../services/api';
 import { SentimentTimePoint, CanonicalEvent, EmotionBreakdown, ApiMeta } from '../types';
 import { AreaChart } from '../components/charts/AreaChart';
 import { EmotionRadar } from '../components/charts/EmotionRadar';
+import { SentimentConfidenceHistogram } from '../components/charts/sentiment/SentimentConfidenceHistogram';
+import { SarcasmUncertaintyScatter } from '../components/charts/sentiment/SarcasmUncertaintyScatter';
+import { LanguageSentimentHeatmap } from '../components/charts/sentiment/LanguageSentimentHeatmap';
 import { DataSourceBadge } from '../components/common/DataSourceBadge';
 import { CsvExportButton } from '../components/common/CsvExportButton';
-import { Smile, AlertCircle, Cpu, Languages, Copy, Check } from 'lucide-react';
+import { Smile, AlertCircle, Cpu, Languages, Copy, Check, Sparkles } from 'lucide-react';
 
 export const SentimentPage: React.FC = () => {
   const { selectedPlatform, timeRange } = useAnalytics();
@@ -32,7 +35,7 @@ export const SentimentPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" role="region" aria-label="Sentiment Vector">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 panel-card p-5">
         <div>
@@ -47,8 +50,11 @@ export const SentimentPage: React.FC = () => {
         </div>
 
         {meta && (
-          <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
-            Model: <span className="text-cyan-400 font-bold">{meta.model_version || 'v3.1'}</span>
+          <div className="flex items-center gap-3">
+            <CsvExportButton data={events} filename="sentiment_multilingual_events.csv" meta={meta} />
+            <div className="text-xs font-mono text-slate-400 bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+              Model: <span className="text-cyan-400 font-bold">{meta.model_version || 'v3.1'}</span>
+            </div>
           </div>
         )}
       </div>
@@ -80,6 +86,13 @@ export const SentimentPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Expanded Charts Row (CHART_EXPANSION.md) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <SentimentConfidenceHistogram requestId={meta?.request_id} />
+        <SarcasmUncertaintyScatter requestId={meta?.request_id} />
+        <LanguageSentimentHeatmap requestId={meta?.request_id} />
+      </div>
+
       {/* Auditable Multilingual Feed Inspector */}
       <div className="panel-card p-5 space-y-4">
         <div className="flex items-center justify-between pb-3 border-b border-slate-800">
@@ -87,14 +100,15 @@ export const SentimentPage: React.FC = () => {
             <AlertCircle className="w-4 h-4 text-amber-400" /> Auditable Multilingual Events & Sarcasm Inspector
           </h3>
           
-          {meta && <CsvExportButton data={events} filename="sentiment_events" meta={meta} />}
+          {meta && <CsvExportButton data={events} filename="auditable_sentiment_events.csv" meta={meta} />}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {events.map((evt) => (
             <div
               key={evt.event_id}
-              className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3"
+              tabIndex={0}
+              className="p-4 rounded-xl bg-slate-900/80 border border-slate-800 space-y-3 focus:outline-none focus:ring-2 focus:ring-cyan-400"
             >
               <div className="flex items-center justify-between text-xs font-mono">
                 <span className="px-2 py-0.5 rounded bg-slate-800 text-cyan-300 font-bold uppercase text-[10px]">
@@ -105,8 +119,9 @@ export const SentimentPage: React.FC = () => {
                   <span className="text-[10px] text-slate-500">ID: {evt.event_id}</span>
                   <button
                     onClick={() => handleCopy(evt.event_id)}
-                    className="p-1 text-slate-400 hover:text-white"
+                    className="p-1 text-slate-400 hover:text-white focus:outline-none focus:ring-2 focus:ring-cyan-400 rounded"
                     title="Copy Event ID"
+                    aria-label="Copy event ID"
                   >
                     {copiedId === evt.event_id ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
                   </button>
