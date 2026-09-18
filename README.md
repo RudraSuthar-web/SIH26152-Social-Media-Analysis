@@ -5,13 +5,14 @@
 [![Theme](https://img.shields.io/badge/Theme-Blockchain%20%26%20Cybersecurity-purple.svg)]()
 [![Backend](https://img.shields.io/badge/Backend-FastAPI%20%7C%20TimescaleDB%20%7C%20Redis-009688.svg)]()
 [![Frontend](https://img.shields.io/badge/Frontend-React%2018%20%7C%20TypeScript%20%7C%20Vite-61DAFB.svg)]()
-[![Audit Status](https://img.shields.io/badge/Audit-100%25%20Defense%20Compliant-emerald.svg)]()
+[![DB Status](https://img.shields.io/badge/DB%20Migrated-%E2%9C%85%2011%20Tables-brightgreen.svg)]()
+[![Build Status](https://img.shields.io/badge/Build-Infrastructure%20Ready%20%7C%20Code%20In%20Progress-yellow.svg)]()
 
 > **Smart India Hackathon 2026 (SIH 2026)**  
 > **Problem Statement ID:** 26152  
 > **Nodal Agency / Organization:** National Technical Research Organisation (NTRO)  
 > **Category:** Software  
-> **Theme:** Blockchain & Cybersecurity / Narrative & Threat Intelligence  
+> **Theme:** Blockchain & Cybersecurity / Narrative & Threat Intelligence
 
 ---
 
@@ -20,6 +21,14 @@
 The **Sovereign AI-Driven Social Media Analytics & Threat Intelligence Framework** is an enterprise-grade, high-throughput narrative tracking and threat detection platform built for national defense and intelligence operations. Designed for real-time processing of multi-lingual social media event streams (X/Twitter, Telegram, Web streams), the platform detects coordinated disinformation campaigns, isolates botnet clusters, quantifies emotional panic/hostility levels, computes actor influence centralities, and traces cascade propagation dynamics ($R_0$).
 
 Built under strict adherence to defense audit standards (**`BRUTAL_AUDIT.md`**), this system rejects platform vanity metrics (likes, retweets, follower counts) in favor of raw event-based signal processing, explicit mathematical formula transparency (LaTeX inspectors), pseudonymous identity masking (`node_id`), and strict data provenance tracing (`ApiResponse<T>` envelopes).
+
+**Current Status (2026-09-18):**
+- ✅ **Infrastructure**: Docker Compose (TimescaleDB + Redis) — **Running & Healthy**
+- ✅ **Database**: TimescaleDB migrated — **11 tables created** (hypertable + indexes)
+- ✅ **Secrets**: JWT keys, Telegram MTProto session, TwitterAPI.io key — **Configured**
+- ⏳ **Backend Code**: Infrastructure ready; **Core logic implementation in progress**
+- ⏳ **Frontend**: Dashboard UI ready; **Backend integration pending**
+- ❌ **Tests/CI/CD**: Not yet implemented
 
 ---
 
@@ -119,13 +128,13 @@ To ingest live messages and channel data from Telegram, follow these steps to ob
 ### Step 2: (Optional) Create Telegram Bot Token via @BotFather
 1. Open Telegram and search for **`@BotFather`**.
 2. Send `/newbot` and follow the prompts to set a name and username for your bot.
-3. Copy the HTTP API token provided by BotFather (e.g., `7123456789:ABCdefGhIJKlmNoPQRstuVWXyz12345`).
+3. Copy the HTTP API token provided by BotFather (e.g., `7123456789:***`).
 
 ### Step 3: Generate Telethon String Session (For User Account Ingestion)
 1. Run the interactive session generator script in the backend directory:
    ```bash
    cd backend
-   ./.venv/bin/python create_session.py
+   uv run python create_session.py
    ```
 2. Enter your phone number (with country code) when prompted and input the login OTP sent to Telegram.
 3. Copy the generated string session output (`TG_SESSION_STRING`).
@@ -140,6 +149,10 @@ TG_SESSION_STRING="your_generated_string_session_here"
 
 # Telegram Bot Token (optional)
 TELEGRAM_BOT_TOKEN="your_bot_token_here"
+
+# X/Twitter Data Source
+TWITTERAPI_IO_KEY=your_twitterapi_io_key
+X_PROVIDER=twitterapi_io
 ```
 
 ---
@@ -168,7 +181,7 @@ docker-compose up -d
 *Verify containers are running:*
 ```bash
 docker ps
-# Expected: socialmediaanalysis-postgres-1 (port 5432) and socialmediaanalysis-redis-1 (port 6379)
+# Expected: sih-postgres (port 5432) and sih-redis (port 6379)
 ```
 
 ---
@@ -185,6 +198,7 @@ docker ps
    uv venv .venv
    source .venv/bin/activate
    uv pip install -r requirements.txt
+   uv pip install alembic
    ```
 
 3. **Generate JWT Cryptographic Keys**:
@@ -196,12 +210,13 @@ docker ps
 
 4. **Run Database Migrations (Alembic)**:
    ```bash
-   alembic upgrade head
+   uv run alembic upgrade head
    ```
+   *Verify 11 tables created in TimescaleDB.*
 
 5. **Launch FastAPI Application Server**:
    ```bash
-   ./.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
    ```
    *The API will be live at `http://localhost:8000` (API Docs at `http://localhost:8000/docs`).*
 
@@ -235,17 +250,7 @@ docker ps
 
 ## 🧪 Testing & Verification
 
-Run the automated backend test suite:
-```bash
-cd backend
-./.venv/bin/pytest -v
-```
-*Output: 6 passed tests verifying `/health`, `/ready`, `/events`, `/sentiment`, `/metrics/overview`, and `/demographics`.*
-
-Run adapter live connectivity test:
-```bash
-./.venv/bin/python scripts/test_adapters.py
-```
+*Tests not yet implemented. See `BRUTAL_AUDIT.md` for testing requirements.*
 
 ---
 
@@ -295,8 +300,6 @@ SIH26152-Social-Media-Analysis/
 ├── docker-compose.yml            # PostgreSQL TimescaleDB & Redis Orchestration
 ├── .gitignore                    # Comprehensive Git Exclusions
 ├── BRUTAL_AUDIT.md               # Defense Audit Standards & Verification Rules
-├── CHART_EXPANSION.md            # Expanded Visualizations Blueprint
-├── NEXT_STEPS.md                 # Implementation Roadmap
 ├── PROPOSED_SOLUTION.md          # Sovereign AI Technical Architecture
 └── README.md                     # Project Master Documentation
 ```

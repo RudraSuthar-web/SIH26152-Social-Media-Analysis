@@ -1,408 +1,374 @@
-# BRUTAL_AUDIT.md — Dashboard & Architecture Changes for 10/10
-## PS 26152 — SIH 2026 (NTRO)
+# BRUTAL_AUDIT.md — Full System Audit for 10/10
+## PS 26152 — SIH 2026 (NTRO) | Social Media Analytics Framework
 ### No mercy. No fluff. Only what must die and what must be built.
 
----
-
-## 🎯 SCORE BREAKDOWN: WHY 5.5/10
-
-| Dimension | Current | Target | Gap |
-|-----------|---------|--------|-----|
-| **SOUL.md Compliance** | 4/10 | 10/10 | Fake data, fabricated categories, pseudonymity leaks |
-| **Architecture** | 7/10 | 10/10 | Leaky abstractions, `useSynthetic` in UI, no error boundaries |
-| **UI/UX** | 7/10 | 10/10 | Vanity metrics, missing states, no keyboard nav, no a11y |
-| **Data Integrity** | 3/10 | 10/10 | Hardcoded mocks presented as live |
-| **Production Readiness** | 4/10 | 10/10 | No resilience, no observability in UI, brittle |
-
-**To hit 10/10: Every SOUL.md § must be visibly, testably implemented in the dashboard.**
+**Last Updated:** 2026-09-18
+**Auditor:** Autonomous Engineering Agent
+**Scope:** Frontend + Backend + Infrastructure + Documentation + Process
 
 ---
 
-## 💀 PART 1: KILL THESE (DELETE ENTIRELY)
+## 🎯 EXECUTIVE SCORE: 4.0 / 10
 
-### 1.1 `PlatformKpiMetrics` — The Vanity Metric Cancer
-**Files:** `types/index.ts`, `services/api.ts`, `services/mockData.ts`, `pages/OverviewPage.tsx`, `components/common/MetricCard.tsx` (if used for this)
+| Dimension | Score | Why |
+|-----------|-------|-----|
+| **SOUL.md Compliance** | 2/10 | Fake data everywhere; pseudonymity leaks; vanity metrics; no traceability |
+| **Architecture** | 4/10 | Designed on paper; 80% not implemented; leaky abstractions; no contracts |
+| **Backend Implementation** | 3/10 | Skeleton only; 5% core logic (DB done); adapters missing; pipeline missing; workers missing |
+| **Frontend Implementation** | 5/10 | Pretty UI; fake data; no backend integration; architecture leaks |
+| **Infrastructure** | 8/10 | Docker Compose works; TimescaleDB + Redis healthy; secrets managed; **DB migrated** |
+| **Data Integrity** | 1/10 | Hardcoded mocks presented as live; no traceability; no provenance |
+| **Testing & Observability** | 2/10 | Structlog/Prometheus configured but unused; 0 tests |
+| **Production Readiness** | 2/10 | Far from deployable; no CI/CD; no runbooks; no chaos testing |
+| **Documentation** | 8/10 | Excellent design docs; zero operational docs |
 
-**DELETE.** SOUL.md §21 Overview requires:
-- `total_events` ✓
-- `active_users/accounts` ✓
-- `trending_topics` ✓
-- `sentiment_distribution` ✓
-- `ingestion_health` ✓
-
-**It does NOT require:** followers, impressions, engagement rate, interactions — these are **platform-native vanity metrics**, not analytics outputs. Showing them implies the system *produces* them. It doesn't. It *ingests* events.
-
-### 1.2 Reddit/YouTube/Instagram from Overview
-**File:** `mockData.ts:53-107`, `OverviewPage.tsx:22-102`
-
-**DELETE.** Only X & Telegram are **Essential** (SOUL.md §2). The rest are Desirable/Bonus. Showing 5 platforms with equal weight = **fake intelligence** (SOUL.md §1.2 violation).
-
-### 1.3 `trend.category` Field
-**Files:** `types/index.ts` (`TrendTopic`), `mockData.ts:352,360,368,376`, `pages/TrendsPage.tsx:96,111`
-
-**DELETE.** SOUL.md §10 requires: keyword freq, hashtag freq, topic clustering, growth, velocity, momentum, trend_score. **No taxonomy.** "Cyber Intelligence", "AI & Machine Learning" are fabricated labels with no source.
-
-### 1.4 `CommunityCluster.name` Field
-**Files:** `types/index.ts` (`CommunityCluster`), `mockData.ts:464,472,480`, `components/network/CommunityPanel.tsx`
-
-**DELETE.** SOUL.md §16: *"Do not assign real-world ideological or political identities to communities without strong evidence and explicit methodology."* Names like "Institutional Cyber Defense & NTRO" are **fabricated identities**. Only `community_id`, `node_count`, `modularity`, `topic_distribution`, `algorithm`, `window` are allowed.
-
-### 1.5 `NetworkNode.handle` & `display_name`
-**Files:** `types/index.ts` (`NetworkNode`), `mockData.ts:444-449`, `pages/NetworkPage.tsx:93-102`
-
-**DELETE.** SOUL.md §13: *"Use pseudonymous internal identifiers."* Exposing `@NTRO_SecurityHQ` defeats pseudonymity. The dashboard must show **only** `node_id` (or truncated hash) + centrality metrics. If analysts need real handles, that's a separate privileged workflow — not the default view.
-
-### 1.6 `mockSystemMetrics.adapter_count_healthy: 4`
-**File:** `mockData.ts:118-119`
-
-**DELETE.** Only 2 adapters exist (X, Telegram). Claiming 4 = **fake intelligence** (SOUL.md §1.2).
-
-### 1.7 Hardcoded `defaultEmotions` in SentimentPage
-**File:** `pages/SentimentPage.tsx:20-28`
-
-**DELETE.** Static mock data rendered instead of API-driven `EmotionBreakdown`. No `data_source` badge on radar = **fake intelligence**.
-
-### 1.8 `DataQualityPage` Hardcoded "HEALTHY"
-**File:** `pages/DataQualityPage.tsx:37`
-
-**DELETE.** Must compute from `adapters.every(a => a.status === 'healthy') && models.every(m => m.error_rate_pct < 1)`.
-
-### 1.9 `VelocityScatter` Formula Button → Modal Duplication
-**File:** `pages/TrendsPage.tsx:34-39`, `141-183`
-
-**DELETE MODAL.** Formula is already inline (lines 65-81). Button opens same info = UX debt.
+**OVERALL: 4.0/10 — "Database is live. Infrastructure solid. Code still missing."**
 
 ---
 
-## 🏗️ PART 2: ARCHITECTURE CHANGES (NON-NEGOTIABLE)
+## 💀 PART 1: KILL THESE — ENTIRE SYSTEM
 
-### 2.1 Move `useSynthetic` Out of UI — Server-Side Only
-**Current:** Every page calls `apiService.getX(useSynthetic)` → UI knows about synthetic/live.
+### 1.1 Frontend: Vanity Metric Cancer (Already Documented)
+**DELETE:** `PlatformKpiMetrics`, Reddit/YouTube/Instagram from Overview, `trend.category`, `CommunityCluster.name`, `NetworkNode.handle`/`display_name`, hardcoded `defaultEmotions`, hardcoded "HEALTHY", Formula modal duplication, `mockSystemMetrics.adapter_count_healthy: 4`.
 
-**Required:** 
-```
-Frontend                    Backend
-    │                          │
-    ├─ GET /api/v1/sentiment ─▶│
-    │                          ├─ Reads ENV: DATA_SOURCE=live|synthetic|replay
-    │                          ├─ Executes query
-    │                          ├─ Adds `data_source` to response
-    │                          ▼
-    ◀──── {data: [...], data_source: "live", request_id: "..."} ──┤
-    │
-    ├─ Shows DataSourceBadge from response.data_source
-    ▼
-```
+### 1.2 Backend: Fake Intelligence in Config & Mocks
+**Files:** `backend/config.yaml`, `backend/app/adapters/*.py` (if they exist with mocks), any `mockData.py` in backend.
 
-**Files to change:**
-- `services/api.ts` — remove `useSynthetic` param from all methods
-- `context/AnalyticsContext.tsx` — remove `useSynthetic`, keep only `timeRange`, `selectedPlatform`
-- All pages — remove `useSynthetic` from `useEffect` deps
-- Backend (not in repo yet) — add `data_source` to every response envelope
+**KILL:**
+- Any `mock_data` or `fake_events` in backend code
+- Any adapter returning hardcoded events
+- Any "synthetic_ratio" that mixes fake with real without explicit `data_source` tag
+- Any `PlatformKpiMetrics`-equivalent in backend schemas
 
-### 2.2 Response Envelope Standard (SOUL.md §20, §22)
-**Every API response must be:**
-```typescript
-interface ApiResponse<T> {
-  data: T;
-  meta: {
-    request_id: string;
-    timestamp: string;           // ISO 8601 UTC
-    data_source: 'live' | 'synthetic' | 'replay' | 'degraded' | 'offline';
-    window?: { since: string; until: string };
-    model_version?: string;      // for AI-derived data
-    processing_version?: string;
-  };
-  error?: { code: string; message: string };
-}
-```
+**SOUL.md §1.2:** *"Never invent posts, users, engagement counts, demographic attributes, sentiment labels, influencers, relationships, API responses, model confidence, trend statistics."*
 
-**Frontend:** `services/api.ts` interceptors unwrap `response.data.data`, pass `response.data.meta` to components via context or props.
+### 1.3 Architecture: Leaky Abstractions
+**KILL:**
+- `useSynthetic` in frontend (move to backend ENV)
+- `synthetic_ratio` in adapter config (backend decides data source)
+- Any frontend knowledge of data source (frontend only reads `meta.data_source`)
+- Any `any` types in API layer
+- Any mock data in `src/` (move to `tests/fixtures/` only)
 
-### 2.3 Error Boundaries + Loading/Empty States (SOUL.md §31)
-**Current:** Pages return `null` on empty → layout breaks.
-
-**Required:** Every page wrapped in:
-```tsx
-<ErrorBoundary fallback={<PageError />}>
-  <Suspense fallback={<PageSkeleton />}>
-    <PageContent />
-  </Suspense>
-</ErrorBoundary>
-```
-
-**Components needed:**
-- `PageSkeleton` — shimmer for each widget (already have `LoadingSkeleton`, compose it)
-- `PageError` — shows error.meta.message, retry button, request_id for support
-- `EmptyState` — "No data for selected window. Adjust filters or check ingestion health."
-
-### 2.4 WebSocket for Real-Time (SOUL.md §21, §23)
-**Current:** Polling via `useEffect` + `useSynthetic` changes.
-
-**Required:** 
-- `/api/v1/ws` WebSocket endpoint (backend)
-- `hooks/useWebSocket.ts` — auto-reconnect, subscribe to topics: `ingestion.health`, `trends.new`, `model.health`
-- `OverviewPage`, `TrendsPage`, `DataQualityPage` — subscribe, update local state optimistically
-- Fallback to polling if WS fails (graceful degradation)
-
-### 2.5 Request ID Propagation (SOUL.md §20, §23)
-**Current:** Missing.
-
-**Required:** 
-- `services/api.ts` — generate `x-request-id` header per request (UUID v4)
-- Backend — echo in response meta, include in all logs
-- UI — show `request_id` in error modals, copy-to-clipboard for debugging
-
-### 2.6 Type-Safe API Contracts (SOUL.md §32)
-**Current:** `api.ts` returns `Promise<any>` or loose types.
-
-**Required:** 
-- Generate TypeScript types from OpenAPI spec (`openapi-typescript`)
-- Or: define `ApiResponse<T>` + endpoint-specific `T` in `types/api.ts`
-- `apiService.getTrends()` → `Promise<ApiResponse<TrendTopic[]>>`
-- Compile-time guarantee: if backend changes, frontend breaks at build
+### 1.4 Data: Untraceable Outputs
+**KILL:**
+- Any analytics output without `request_id`, `timestamp`, `data_source`, `model_version`, `processing_version`
+- Any sentiment without `model_name`, `model_version`, `confidence`, `sarcasm_uncertain`
+- Any trend without documented formula components
+- Any network edge without `provenance` (`observed` | `inferred`)
+- Any demographic without `confidence_label` + `confidence_intervals`
 
 ---
 
-## 🎨 PART 3: UI/UX CHANGES (BRUTAL STANDARD)
+## 🏗️ PART 2: BUILD THESE — BACKEND (PRIORITY ORDER)
 
-### 3.1 Overview Page — Complete Redesign
-**Current:** 5-platform KPI grid (fake), MultiLineChart, DonutChart.
-
-**Required (SOUL.md §21):**
-
+### 2.1 Database Migrations (BLOCKER) ✅ **DONE**
+**File:** `backend/alembic/versions/*.py`
+**Status:** ✅ **COMPLETE** — 11 tables created in PostgreSQL
+**Action:** ✅ Executed
+```bash
+cd backend && alembic upgrade head
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│ OVERVIEW                                                        │
-├─────────────────────────────────────────────────────────────────┤
-│ ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────────┐  │
-│ │ Events   │ │ Accounts │ │ Trends   │ │ Ingestion Health   │  │
-│ │ 24h      │ │ Active   │ │ Rising   │ │ X: ●  Telegram: ●  │  │
-│ │ 148,290  │ │ 18,450   │ │ 12       │ │ Reddit: ○  YT: ○   │  │
-│ │ +12.3%   │ │          │ │          │ │ IG: ○  FB: ○       │  │
-│ └──────────┘ └──────────┘ └──────────┘ └────────────────────┘  │
-├────────────────────────────────┬────────────────────────────────┤
-│ SENTIMENT SPARKLINE (6h)       │ TOP 5 TRENDS                  │
-│ ▁▂▃▅▆▇█▇▆▅▃▂▁  Pos/Neg/Neu     │ 1. NTRO AI Framework    94.6 │
-│                                │ 2. Multilingual Sarcasm   82.3 │
-│                                │ 3. Leiden Communities     71.8 │
-│                                │ 4. ⚠ BOT BURST #CyberSec  88.9 │
-│                                │ 5. PostGIS Integration    45.2 │
-└────────────────────────────────┴────────────────────────────────┘
+**Verify:** 11 tables created (hypertable + indexes)
+```bash
+docker compose exec postgres psql -U analytics -d social_analytics -c "\dt"
 ```
+**Tables created:** canonical_events, sentiment_results, trend_windows, network_nodes, network_edges, community_assignments, demographic_aggregates, dead_letter_events, adapter_health, model_health, alembic_version
 
-**Data needed from API:**
-```typescript
-interface OverviewMetrics {
-  total_events_24h: number;
-  events_trend_pct: number;
-  active_accounts_24h: number;
-  trending_topics_count: number;
-  sentiment_distribution: { positive: number; negative: number; neutral: number };
-  adapter_health: Record<string, 'healthy' | 'degraded' | 'down'>;
-}
+### 2.2 Adapter Layer (CORE)
+**Files to CREATE:**
+```
+backend/app/adapters/
+├── __init__.py
+├── base.py              # Abstract base + RawPlatformEvent + errors
+├── x_adapter.py         # TwitterAPI.io + Official + Synthetic
+├── telegram_adapter.py  # MTProto (Telethon)
+└── registry.py          # Discovery + health + lifecycle
 ```
 
-### 3.2 Sentiment Page — Auditability First
-**Current:** AreaChart + EmotionRadar (hardcoded) + Event cards.
+**Each Adapter MUST implement:**
+```python
+async def fetch_events(since: datetime, until: datetime) -> AsyncIterator[RawPlatformEvent]
+async def health_check() -> dict  # {status, provider, error?, lag_seconds?}
+```
 
-**Required:**
-- **AreaChart:** Stacked positive/negative/neutral + sarcasm flagged overlay (SOUL.md §9)
-- **EmotionRadar:** Driven by `apiService.getEmotionAggregate(window)` — not hardcoded
-- **Event Inspector:** Table with columns: `platform`, `language`, `original_text`, `translation`, `sentiment`, `confidence`, `sarcasm_flag`, `model_version`, `event_timestamp`, `data_source`
-- **Copy-to-clipboard** on event_id for traceability (SOUL.md §22)
-- **Filter bar:** platform, language, sentiment, sarcasm_flag, date range
+**X Adapter:** TwitterAPI.io (primary), Official (fallback), Synthetic (explicit `data_source`)
+**Telegram Adapter:** MTProto only (Bot API = real-time only, no history)
 
-### 3.3 Demographics Page — Confidence Transparency
-**Current:** 4 BarCharts, confidence label + sample size.
+### 2.3 Ingestion Pipeline (CORE)
+**Files to CREATE:**
+```
+backend/app/ingestion/
+├── __init__.py
+├── normalizer.py        # RawPlatformEvent → CanonicalEvent (Pydantic)
+├── validator.py         # Schema + business rules (timestamps, IDs, lengths)
+├── deduplicator.py      # Redis SET + DB unique constraint (platform, source_id)
+├── pipeline.py          # Orchestrates: fetch → validate → normalize → dedupe → Redis Stream
+├── dead_letter.py       # Quarantine invalid events → dead_letter_events table
+└── scheduler.py         # APScheduler cron triggers
+```
 
-**Required (SOUL.md §12):**
-- Every bar shows **confidence interval** (error bars) — not just point estimate
-- `confidence_label` must be: `estimated` | `inferred` | `uncertain` — no other values
-- **Methodology toggle:** "How was this inferred?" → modal showing signals used (bio keywords, posting hours, language, follows ratio)
-- **Geography:** Use Leaflet map (not BarChart) — SOUL.md §21 mentions "aggregate geography"
-- **Age brackets:** Only show if `confidence_label !== 'uncertain'`
+**Redis Stream:** `events:raw` with consumer groups: `sentiment`, `trends`, `network`, `demographics`
+
+### 2.4 Canonical Event Model (CORE)
+**File:** `backend/app/models/events.py` (SQLAlchemy)
+**Table:** `canonical_events` (TimescaleDB hypertable on `event_timestamp`)
+**Required Fields:** All from SOUL.md §3 + `data_source` + `schema_version`
+
+### 2.5 API Contracts (CORE)
+**File:** `backend/app/schemas/common.py`
+```python
+class ApiMeta(BaseModel):
+    request_id: str
+    timestamp: datetime
+    data_source: Literal["live", "synthetic", "replay", "degraded", "offline"]
+    window: Optional[TimeWindow]
+    model_version: Optional[str]
+    processing_version: Optional[str]
+
+class ApiResponse(BaseModel, Generic[T]):
+    data: T
+    meta: ApiMeta
+    error: Optional[ErrorDetail]
+```
+**ALL endpoints return this. No exceptions.**
+
+### 2.6 API Routes (CORE)
+**Files to CREATE:**
+```
+backend/app/api/routes/
+├── __init__.py
+├── events.py            # GET /events, GET /events/{id}
+├── sentiment.py         # GET /sentiment/timeline, /emotions, /events, /confidence-histogram, /sarcasm-scatter, /language-heatmap
+├── trends.py            # GET /trends, /trends/{id}, /trends/{id}/formula, /trends/lifecycle, /trends/coordination-scatter
+├── network.py           # GET /network/graph, /network/kol, /network/communities, /network/centrality-distribution, /network/edge-sankey, /network/propagation, /network/propagation-speed
+├── demographics.py      # GET /demographics, /demographics/geography
+├── health.py            # GET /health, /ready
+├── admin.py             # GET /admin/ingestion/status, POST /admin/ingestion/trigger, GET /admin/adapters, PATCH /admin/adapters/{platform}, GET /admin/models/status, GET /admin/models/evaluation, GET /admin/dlq, POST /admin/dlq/{id}/replay, POST /admin/dlq/replay-batch
+└── websocket.py         # WS /ws with topics: ingestion.health, trends.new, model.health
+```
+
+### 2.7 Analytics Workers (CORE)
+**Files to CREATE:**
+```
+backend/app/workers/
+├── __init__.py
+├── base_worker.py       # Health, metrics, graceful shutdown, Redis consumer
+├── sentiment_worker.py  # ONNX inference → sentiment_results
+├── trends_worker.py     # Windowed aggregation → trend_windows
+├── network_worker.py    # Graph build → centrality → communities → propagation
+├── demographics_worker.py # Periodic aggregate → demographic_aggregates
+└── scheduler.py         # APScheduler triggers
+```
+
+**Sentiment Worker:** ONNX Runtime (CUDAExecutionProvider), batch=32, max_length=512
+**Trends Worker:** 5m/1h/24h windows, documented formula, clustering
+**Network Worker:** 24h window, Leiden communities, PageRank, betweenness, propagation cascades
+**Demographics Worker:** 24h window, heuristic v1, confidence intervals
+
+### 2.8 ONNX Sentiment Model (CORE)
+**File:** `backend/models/xlm-roberta-sentiment-v3.1.onnx`
+**Steps:**
+1. Download `cardiffnlp/twitter-xlm-roberta-base-sentiment`
+2. Export to ONNX with emotion heads (7 emotions + sentiment)
+3. Quantize INT8
+4. Place at `backend/models/xlm-roberta-sentiment-v3.1.onnx`
+5. Config: `SENTIMENT_MODEL_PATH=./models/xlm-roberta-sentiment-v3.1.onnx`
+
+### 2.9 Response Envelope Enforcement
+**Middleware:** `backend/app/middleware.py`
+- Inject `request_id` (UUID v4) per request
+- Wrap all responses in `ApiResponse<T>`
+- Add `meta.data_source` from ENV/backend logic
+- Structured logging with `request_id`, `event_id`, `operation`, `duration_ms`
+
+---
+
+## 🎨 PART 3: BUILD THESE — FRONTEND (AFTER BACKEND CONTRACTS)
+
+### 3.1 Architecture Fixes (FIRST)
+- Remove `useSynthetic` from `AnalyticsContext` → backend owns data source
+- `ApiResponse<T>` envelope on all API calls
+- `DataSourceBadge` reads `response.meta.data_source`
+- Error boundaries + Suspense on all pages
+- WebSocket hook with reconnect + fallback polling
+- Request ID generation + propagation
+
+### 3.2 Overview Page Redesign
+**Data:** `OverviewMetrics` (total_events_24h, active_accounts_24h, trending_topics_count, sentiment_distribution, adapter_health)
+**No vanity KPIs. No 5-platform grid. Only X + Telegram.**
+
+### 3.3 Sentiment Page — Auditability
+- AreaChart: stacked pos/neg/neu + sarcasm overlay
+- EmotionRadar: from `/sentiment/emotions`
+- Event Table: platform, language, original_text, translation, sentiment, confidence, sarcasm_flag, model_version, event_timestamp, data_source
+- Copy event_id → clipboard
+- Filter bar: platform, language, sentiment, sarcasm_flag, date range
 
 ### 3.4 Trends Page — Math Transparency
-**Current:** VelocityScatter + Table + Formula box + Modal (duplicate).
-
-**Required:**
-- **Scatter:** X=log(Volume), Y=Growth Rate, Size=Velocity, Color=Trend Score, Shape=coordinated_pattern (⚠)
-- **Table:** Columns = Topic, Volume, Growth%, Velocity, Trend Score, Pattern, Platforms, Languages, **Components** (expandable: volume_score, growth_rate, velocity, decay)
-- **Formula Inspector:** Inline, not modal. Show **actual computed values** for selected topic:
-  ```
-  Topic: NTRO AI Framework
-  Volume: 24,890 → log(V+1) = 10.12
-  Prev Volume: 5,632 → Growth = +342%
-  Prev Growth: +120% → Velocity = +222%
-  Hours since peak: 1.2 → Decay = 0.95
-  TrendScore = 10.12 × 4.42 × 3.22 × 0.95 = 137.8
-  ```
-- **Coordinated pattern:** Tooltip explaining detection method (burst velocity + user/volume ratio + copy-paste similarity) — **not** "BOT BURST" label (SOUL.md §11: *"Do not automatically classify coordination as malicious intent. Report observable patterns, not unsupported motives."*)
+- Scatter: X=log(Volume), Y=Growth, Size=Velocity, Color=TrendScore, Shape=coordinated_pattern
+- Table: Topic, Volume, Growth%, Velocity, TrendScore, Pattern, Platforms, Languages, Components (expandable)
+- Formula Inspector: INLINE with actual computed values per topic
+- Coordinated pattern = tooltip explaining detection (burst velocity + user/volume ratio + copy-paste similarity)
 
 ### 3.5 Network Page — Pseudonymity & Provenance
-**Current:** Graph + Communities + KOL Table + Node modal with handle/name.
+- Cytoscape.js: node size=PageRank, edge color=provenance (solid/dashed), community hulls
+- No labels by default; hover for node_id (truncated)
+- KOL Table: node_id, PageRank, Betweenness, Degree, Community, Post Count, Window, Method
+- Node Modal: only pseudonymized metrics + provenance breakdown
+- Propagation Tab: cascade tree for topic/event
 
-**Required:**
-- **Graph:** Cytoscape.js with:
-  - Node size = PageRank (configurable: degree, betweenness)
-  - Edge color = provenance: `observed` (solid) vs `inferred` (dashed) — SOUL.md §14
-  - Edge width = weight (log scale)
-  - Community hulls = convex hull per `community_id` (color from community)
-  - **No labels by default** — hover for `node_id` (truncated)
-- **KOL Table:** Columns = `node_id`, `PageRank`, `Betweenness`, `Degree`, `Community`, `Post Count`, `Window`, **Method** (e.g., "PageRank, α=0.85, 24h window, edges: mention+reply+repost")
-- **Node Modal:** Only `node_id`, centrality metrics, community, `window_start/end`, **provenance breakdown** (observed edges by type, inferred edges by type)
-- **Propagation View:** Separate tab — cascade tree for selected topic/event (SOUL.md §17)
+### 3.6 Demographics Page — Confidence Transparency
+- BarCharts with confidence intervals (error bars)
+- Leaflet choropleth map for geography
+- Methodology modal from `methodology_notes`
+- Only show age brackets if confidence ≠ uncertain
 
-### 3.6 Data Quality Page — Operational Excellence
-**Current:** Adapter cards, Model cards, DLQ list.
+### 3.7 Data Quality Page — Operational Excellence
+- Adapter sparklines (lag 24h), rate limit burn projection
+- Model latency percentiles (p50/p95/p99) + drift alert
+- DLQ grouped by error_code, replay all per group, root cause field
+- System status: computed from adapter/model health
 
-**Required:**
-- **Adapter Health:** Per-adapter sparkline (lag over 24h), rate limit budget bar with projection ("Exhausts at 14:32 UTC"), last 5 errors (expandable)
-- **Model Health:** Latency percentiles (p50/p95/p99) sparklines, error rate trend, **drift alert** if `macro_f1` drops > 5% vs baseline
-- **DLQ:** Group by `error_code`, show count, **replay all** button per group, **root cause** field (filled by engineer)
-- **System Status:** Computed badge: `HEALTHY` | `DEGRADED` | `CRITICAL` based on:
-  - Any adapter `down` → `CRITICAL`
-  - Any adapter `degraded` OR model `error_rate > 1%` → `DEGRADED`
-  - Else `HEALTHY`
-
-### 3.7 Global UI Standards
-
-| Requirement | Implementation |
-|-------------|----------------|
-| **Keyboard navigation** | All interactive elements: `tabindex`, focus-visible rings, `Enter`/`Space` activation |
-| **Screen readers** | Semantic HTML (`<table>`, `<thead>`, `<th scope="col">`), `aria-label` on icon buttons, `role="status"` for live updates |
-| **Color blindness** | Never color-only encoding — use shape + pattern + label (e.g., coordinated pattern = ⚠ triangle + red + "COORDINATED") |
-| **Responsive** | Mobile: stack cards, scrollable tables, collapsible sidebar |
-| **Dark mode only** | Per spec — but ensure contrast ratios ≥ 4.5:1 (WCAG AA) |
-| **Data density** | Compact mode toggle (comfortable/cozy/compact) for analyst workflows |
-| **Export** | Every table → CSV (with meta: request_id, timestamp, data_source, window) |
-| **Timezone** | All timestamps UTC in API, convert to local in UI with TZ indicator |
+### 3.8 Missing Pages
+- `/propagation` — cascade tree (Sankey/indented)
+- `/evaluation` — confusion matrices, calibration, drift timeline, version compare
+- `/admin/adapters` — enable/disable, rate limits, backfill trigger, raw API debug
 
 ---
 
-## 📦 PART 4: MISSING PAGES (SOUL.md §21 GAPS)
+## 🔧 PART 4: INFRASTRUCTURE & OPERATIONS
 
-### 4.1 Propagation / Timeline Page (SOUL.md §17)
-**New page:** `/propagation`
-- Input: `topic_id` or `event_id`
-- Output: Time-ordered cascade tree (Sankey or indented tree)
-- Nodes: `event_id`, `platform`, `user_hash`, `timestamp`, `edge_type`
-- Edge provenance: `observed` | `inferred`
-- Filter: depth, time window, edge types
+### 4.1 CI/CD Pipeline
+**File:** `.github/workflows/ci.yml`
+- Lint (ruff), type-check (mypy), test (pytest), build (Docker)
+- Security: bandit, safety, trivy
+- Contract tests: schemathesis against OpenAPI
+- Visual regression: Chromatic/Percy
 
-### 4.2 Model Evaluation Page (SOUL.md §34)
-**New page:** `/evaluation`
-- Per-model: confusion matrix, precision/recall/F1 per class, calibration plot, latency distribution
-- Language-specific breakdown
-- Drift timeline (macro-F1 over time)
-- **Compare versions** side-by-side
+### 4.2 Testing (SOUL.md §26-35)
+| Tier | Target |
+|------|--------|
+| Unit | 90%+ on pure logic (normalizer, validator, metrics, graph) |
+| Integration | All adapter→pipeline→store paths |
+| Contract | Adapter schemas, API OpenAPI spec |
+| E2E | Playwright: ingest → analyze → dashboard |
+| Load | Locust: 10k events/min sustained, 50k burst |
+| Chaos | Kill DB/Redis/adapter/model/worker → verify recovery |
+| Security | OWASP Top 10 + LLM-specific |
 
-### 4.3 Adapter Management Page (SOUL.md §5)
-**New page:** `/admin/adapters`
-- Enable/disable adapters
-- Configure rate limits, lookback windows
-- Manual backfill trigger (with progress)
-- View raw API responses (debug)
+### 4.3 Observability Stack
+- **Logs:** structlog JSON → Loki → Grafana
+- **Metrics:** Prometheus → Grafana (dashboards for ingestion, processing, API, models, DB, Redis)
+- **Traces:** OpenTelemetry (optional)
+- **Alerts:** Adapter down >5m, queue lag >10m, error rate >5%, disk >80%
 
----
-
-## 🔧 PART 5: BACKEND CONTRACTS (UI CANNOT BE 10/10 WITHOUT THESE)
-
-| Endpoint | Required Response Shape | SOUL.md Ref |
-|----------|------------------------|-------------|
-| `GET /api/v1/overview` | `OverviewMetrics` + `meta` | §21 |
-| `GET /api/v1/sentiment/timeline` | `SentimentTimePoint[]` + `meta.model_version` | §7, §22 |
-| `GET /api/v1/sentiment/emotions` | `EmotionBreakdown` + `meta` | §7 |
-| `GET /api/v1/sentiment/events` | `CanonicalEventWithSentiment[]` (paginated) | §22 |
-| `GET /api/v1/demographics` | `DemographicAggregate` + `meta.method_version` + `confidence_intervals` | §12, §22 |
-| `GET /api/v1/trends` | `TrendTopic[]` (no `category`, with `components`) | §10, §11, §22 |
-| `GET /api/v1/trends/{id}/formula` | `TrendFormulaBreakdown` (actual computed values) | §10, §22 |
-| `GET /api/v1/network/graph` | `{ nodes: NetworkNode[], edges: NetworkEdge[], communities: CommunityCluster[] }` | §14, §15, §16 |
-| `GET /api/v1/network/kol` | `KOLEntry[]` with `method` field | §15, §22 |
-| `GET /api/v1/network/propagation` | `CascadeNode[]` (tree) | §17 |
-| `GET /api/v1/health/adapters` | `AdapterHealth[]` | §23 |
-| `GET /api/v1/health/models` | `ModelHealth[]` + `drift_alert` | §23, §35 |
-| `GET /api/v1/dlq` | `DeadLetterEntry[]` (groupable by error_code) | §6, §23 |
-| `POST /api/v1/dlq/{id}/replay` | `{ success: boolean, new_event_id?: string }` | §6 |
-| `GET /api/v1/ws` | WebSocket: `ingestion.health`, `trends.new`, `model.health` | §21, §23 |
-
-**All responses:** `ApiResponse<T>` envelope with `meta.data_source`, `meta.request_id`, `meta.timestamp`.
+### 4.4 Runbooks (Operational Docs)
+- `docs/runbooks/ingestion_failure.md`
+- `docs/runbooks/model_drift.md`
+- `docs/runbooks/dlq_replay.md`
+- `docs/runbooks/adapter_outage.md`
+- `docs/runbooks/database_failover.md`
 
 ---
 
-## ✅ PART 6: DEFINITION OF DONE FOR 10/10
+## 📋 PART 5: DEFINITION OF DONE FOR 10/10
 
-### UI/UX
-- [ ] Overview page shows ONLY SOUL.md §21 metrics (no vanity KPIs)
-- [ ] All 6 required pages + 3 missing pages implemented
-- [ ] Every widget shows `DataSourceBadge` from response `meta.data_source`
-- [ ] Empty/loading/error states on every page (no `null` returns)
-- [ ] Keyboard navigable, screen-reader accessible, color-blind safe
-- [ ] Export (CSV) on every table with full meta
-- [ ] WebSocket real-time updates on Overview, Trends, DataQuality
-- [ ] Request ID visible in errors, copyable
-- [ ] No hardcoded mock data in any component
-- [ ] Formula Inspector shows **actual computed values** per topic
-- [ ] Network graph: provenance visual encoding, no handles/names
-- [ ] Communities: no names, only topic_distribution
-- [ ] Demographics: confidence intervals, methodology modal, Leaflet map
-- [ ] Propagation page with cascade tree
-- [ ] Model evaluation page with drift detection
+### Ingestion Working
+- [ ] `alembic upgrade head` succeeds
+- [ ] `POST /admin/ingestion/trigger` returns `job_id`
+- [ ] `GET /events?platform=x&limit=10` returns 10 events with `data_source: "live"`
+- [ ] `GET /events?platform=telegram&limit=10` returns 10 events with `data_source: "live"`
+- [ ] `GET /admin/ingestion/status` shows both adapters `healthy`
 
-### Architecture
-- [ ] `useSynthetic` removed from frontend entirely
-- [ ] `ApiResponse<T>` envelope on all endpoints
-- [ ] Type-safe API contracts (generated from OpenAPI or shared types)
-- [ ] Error boundaries + Suspense on all pages
-- [ ] WebSocket hook with reconnect + fallback polling
-- [ ] Request ID generation + propagation
-- [ ] No `any` types in API layer
-- [ ] All mock data moved to `/tests/fixtures/` only (never in `src/`)
+### Analytics Working
+- [ ] Sentiment worker processes events → `sentiment_results` populated
+- [ ] Trends worker computes windows → `trend_windows` populated
+- [ ] Network worker builds graph → `network_nodes/edges/communities` populated
+- [ ] Demographics worker aggregates → `demographic_aggregates` populated
 
-### Testing (SOUL.md §26-35)
-- [ ] Unit tests: all chart components, formatters, hooks
-- [ ] Integration tests: API service with MSW mock server
-- [ ] Contract tests: API response schemas validated
-- [ ] E2E tests: Playwright — ingest → analyze → dashboard renders
-- [ ] Accessibility tests: axe-core in CI
-- [ ] Visual regression: Chromatic or Percy
-- [ ] Load test: 100 concurrent dashboard users
-- [ ] Chaos test: kill backend → UI shows DEGRADED, recovers
+### Dashboard Connected
+- [ ] Overview shows real event counts
+- [ ] Sentiment timeline/emotions from API
+- [ ] Trends scatter/table from API
+- [ ] Network graph from API
+- [ ] Demographics from API
+- [ ] Data quality from API
+- [ ] WebSocket updates on Overview/Trends/DataQuality
 
-### Documentation
-- [ ] `docs/dashboard.md` — component map, data flow, theming
-- [ ] `docs/api.md` — every endpoint with example response
-- [ ] `docs/accessibility.md` — a11y checklist
-- [ ] `DECISIONS.md` updated with every architectural choice
+### Quality Gates
+- [ ] Zero hardcoded mock data in `src/`
+- [ ] All responses have `meta.data_source`, `meta.request_id`, `meta.timestamp`
+- [ ] All sentiment has `model_name`, `model_version`, `confidence`, `sarcasm_uncertain`
+- [ ] All trends have `components` with documented formula
+- [ ] All network edges have `provenance`
+- [ ] All demographics have `confidence_label` + `confidence_intervals`
+- [ ] Unit tests >90% on pure logic
+- [ ] Integration tests pass
+- [ ] Contract tests pass
+- [ ] Load test: 10k events/min
+- [ ] Chaos test: kill any component → graceful degradation
+- [ ] Security scan clean
 
 ---
 
-## 📋 EXECUTION ORDER (VERTICAL SLICES)
+## 📋 PART 6: EXECUTION ORDER (VERTICAL SLICES)
 
-| Slice | Deliverable | Files Touched |
-|-------|-------------|---------------|
-| **0. Contracts** | `ApiResponse<T>`, TypeScript types, OpenAPI spec | `types/api.ts`, `services/api.ts`, backend |
-| **1. Overview** | Real Overview page (no vanity KPIs) | `pages/OverviewPage.tsx`, `components/charts/*`, API |
-| **2. Sentiment** | Auditability: timeline + emotions + event table | `pages/SentimentPage.tsx`, `components/charts/EmotionRadar.tsx` |
-| **3. Trends** | Math transparency + scatter + table (no modal) | `pages/TrendsPage.tsx`, `components/charts/VelocityScatter.tsx` |
-| **4. Network** | Pseudonymity + provenance + propagation tab | `pages/NetworkPage.tsx`, `components/network/*` |
-| **5. Demographics** | Confidence intervals + Leaflet map + methodology | `pages/DemographicsPage.tsx`, `components/charts/BarChart.tsx` |
-| **6. Data Quality** | Computed status + DLQ grouping + replay | `pages/DataQualityPage.tsx` |
-| **7. Missing Pages** | Propagation, Model Evaluation, Adapter Admin | New pages + routes |
-| **8. Infra** | Error boundaries, WS, request ID, a11y, export | `App.tsx`, `hooks/*`, `components/common/*` |
-| **9. Hardening** | Tests, CI, docs, visual regression | `tests/*`, `.github/workflows/*`, `docs/*` |
+| Slice | Deliverable | Est. Time | Dependencies |
+|-------|-------------|-----------|--------------|
+| **0. Foundation** | Tables, Alembic, Base Adapter, Pipeline Skeleton | 4h | DB running |
+| **1. X Adapter** | TwitterAPI.io + Official + Synthetic → events:raw | 6h | Foundation |
+| **2. Telegram Adapter** | MTProto → events:raw | 4h | Foundation |
+| **3. Ingestion Pipeline** | Normalize → Validate → Dedupe → Queue → Store | 6h | Adapters |
+| **4. API Contracts** | ApiResponse<T>, Routes: events, health, admin | 4h | Pipeline |
+| **5. Sentiment Worker** | ONNX model + worker → sentiment_results | 8h | Pipeline, Model |
+| **6. Trends Worker** | Windows + formula → trend_windows | 6h | Pipeline |
+| **7. Network Worker** | Graph + centrality + communities + propagation | 8h | Pipeline |
+| **8. Demographics Worker** | Heuristic aggregates → demographic_aggregates | 4h | Pipeline |
+| **9. Frontend Contracts** | ApiResponse<T>, remove useSynthetic, WS, ErrorBoundary | 6h | API |
+| **10. Dashboard Pages** | Overview, Sentiment, Trends, Network, Demographics, Quality | 12h | Frontend Contracts |
+| **11. Missing Pages** | Propagation, Evaluation, Adapter Admin | 6h | Dashboard |
+| **12. Hardening** | Tests, CI, Docs, Runbooks, Chaos, Load | 16h | All |
+
+**Total: ~88 hours (2.5 focused engineer-weeks)**
 
 ---
 
 ## 🎯 FINAL VERDICT
 
-**This dashboard is a beautiful shell with a rotten core.** It looks like a product but violates the charter at every data layer. 
+### Current State: **3.5/10**
+- **Documentation:** 8/10 (World-class design docs)
+- **Infrastructure:** 7/10 (Docker, TimescaleDB, Redis, secrets)
+- **Backend Code:** 2/10 (Skeleton only; 0% core logic)
+- **Frontend Code:** 5/10 (Pretty UI; fake data; architecture leaks)
+- **Integration:** 1/10 (None)
+- **Testing:** 2/10 (Config only; 0 tests)
+- **Operations:** 2/10 (No CI/CD, no runbooks)
 
-**To ship 10/10:** Delete 40% of current code (vanity metrics, fake categories, pseudonymity leaks), rebuild Overview/Demographics/Trends/Network around **auditability**, add 3 missing pages, fix the architecture leaks (`useSynthetic`, no envelopes, no WS), and test brutally.
+### The Hard Truth
+> **You have a world-class specification for a system that doesn't exist.**
 
-**Estimated effort:** 3-4 focused engineer-weeks (solo: 6-8 weeks).
+The documentation (`SOUL.md`, `BRAIN.md`, `PROPOSED_SOLUTION.md`, `BACKEND_IMPLEMENTATION.md`, `BRUTAL_AUDIT.md`, `CHART_EXPANSION.md`, `IN_PROGRESS.md`, `NEXT_STEPS.md`) is **better than most production systems**. But the code is **<10% implemented**.
 
-**The alternative:** Ship the current dashboard → fail SOUL.md compliance → fail NTRO evaluation → waste the hackathon.
+### The Path to 10/10
+1. **Stop writing docs. Start writing code.**
+2. **Run `alembic upgrade head` NOW.** (Unblocks everything)
+3. **Build adapters → pipeline → API → workers → dashboard** in that order.
+4. **Vertical slices only.** Each slice = end-to-end working feature.
+5. **No mock data in `src/`.** Ever. `data_source` on every response.
+6. **Test brutally.** Chaos, load, contract, security.
 
-**Your call.**
+### Estimated Effort to Demo-Ready
+| Scenario | Time |
+|----------|------|
+| Solo, focused | 3-4 weeks |
+| Solo, part-time | 6-8 weeks |
+| 2 engineers | 2 weeks |
+
+**The hackathon is in ~2 weeks.** You need ~88 hours of focused coding. That's **6+ hours/day every day**.
+
+**Your call. The spec is ready. The infrastructure is ready. The code is not.**
+
+---
+
+*This audit is brutal because the stakes are real. NTRO evaluates working systems, not beautiful docs.*
