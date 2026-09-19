@@ -1,78 +1,105 @@
 from datetime import datetime, timezone
-from fastapi import APIRouter, Request, Query
+from fastapi import APIRouter, Request, Query, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+
+from app.database import get_db
+from app.models.events import CanonicalEventModel
 from app.schemas.common import ApiResponse, ApiMeta
 from app.schemas.events import CanonicalEvent
 
 router = APIRouter(prefix="/events", tags=["Canonical Events"])
 
-MOCK_EVENTS: list[CanonicalEvent] = [
-  CanonicalEvent(
-    event_id="evt-1001",
-    platform="x",
-    source_event_id="src-x-9912",
-    source_user_id="usr_8f4a12",
-    text="Critical update on cyber defense frameworks: NTRO initiative for social media analytics! #CyberSecurity #NTRO",
-    language="en",
-    detected_language_confidence=0.98,
-    event_timestamp=datetime.now(timezone.utc).isoformat(),
-    ingested_at=datetime.now(timezone.utc).isoformat(),
-    conversation_id="conv-4401",
-    mentions=["@NTRO_India"],
-    hashtags=["#CyberSecurity", "#NTRO"],
-    urls=["https://sih.gov.in/ps/26152"],
-    sentiment="positive",
-    sentiment_confidence=0.94,
-    data_source="synthetic"
-  ),
-  CanonicalEvent(
-    event_id="evt-1002",
-    platform="telegram",
-    source_event_id="src-tg-8819",
-    source_user_id="usr_3b91e7",
-    text="સાયબર સિક્યુરિટી અને નેશનલ ટેકનિકલ રિસર્ચ ઓર્ગેનાઇઝેશન પ્લેટફોર્મ. #CyberSec #NTRO",
-    language="gu",
-    detected_language_confidence=0.92,
-    translated_text="Cybersecurity and National Technical Research Organisation platform.",
-    event_timestamp=datetime.now(timezone.utc).isoformat(),
-    ingested_at=datetime.now(timezone.utc).isoformat(),
-    conversation_id="conv-4402",
-    mentions=[],
-    hashtags=["#CyberSec", "#NTRO"],
-    urls=[],
-    sentiment="neutral",
-    sentiment_confidence=0.89,
-    data_source="synthetic"
-  ),
-  CanonicalEvent(
-    event_id="evt-1003",
-    platform="x",
-    source_event_id="src-x-7711",
-    source_user_id="usr_c12a89",
-    text="Wow, another policy update... sure, this will totally fix server latency 🙄 #SarcasmCheck",
-    language="hinglish",
-    detected_language_confidence=0.85,
-    event_timestamp=datetime.now(timezone.utc).isoformat(),
-    ingested_at=datetime.now(timezone.utc).isoformat(),
-    sentiment="negative",
-    sentiment_confidence=0.78,
-    data_source="synthetic"
-  )
-]
+def model_to_schema(m: CanonicalEventModel) -> CanonicalEvent:
+    return CanonicalEvent(
+        event_id=m.event_id,
+        platform=m.platform,
+        source_event_id=m.source_event_id,
+        source_user_id=m.node_id or m.source_user_id,
+        text=m.text,
+        language=m.language or "en",
+        detected_language_confidence=m.detected_language_confidence or 0.95,
+        translated_text=m.translated_text,
+        event_timestamp=m.event_timestamp.isoformat() if isinstance(m.event_timestamp, datetime) else str(m.event_timestamp),
+        ingested_at=m.ingested_at.isoformat() if isinstance(m.ingested_at, datetime) else str(m.ingested_at),
+        conversation_id=m.conversation_id,
+        parent_event_id=m.parent_event_id,
+        mentions=m.mentions or [],
+        hashtags=m.hashtags or [],
+        urls=m.urls or [],
+        engagement=m.engagement or {},
+        sentiment=m.sentiment or "neutral",
+        sentiment_confidence=m.sentiment_confidence or 0.88,
+        data_source=(m.data_source or "synthetic").lower()
+    )
 
 @router.get("", response_model=ApiResponse[list[CanonicalEvent]])
-async def get_events(request: Request, platform: str = Query("all")):
+async def get_events(
+    request: Request,
+    platform: str = Query("all", description="Platform filter: 'x', 'telegram', 'web', or 'all'"),
+    limit: int = Query(50, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    db: AsyncSession = Depends(get_db)
+):
     req_id = getattr(request.state, "request_id", "req-events")
-    filtered = MOCK_EVENTS if platform == "all" else [e for e in MOCK_EVENTS if e.platform == platform]
+    stmt = select(CanonicalEventModel).order_by(CanonicalEventModel.event_timestamp.desc())
+
+    if platform != "all":
+        stmt = stmt.where(CanonicalEventModel.platform == platform.lower())
+
+    stmt = stmt.limit(limit).offset(offset)
+    result = await db.execute(stmt)
+    records = result.scalars().all()
+
+    # Seed initial events if database table is currently empty
+    if not records:
+        from app.ingestion.pipeline import pipeline
+        await pipeline.run_ingestion_job(platform="x" if platform == "all" else platform, lookback_minutes=60)
+        await pipeline.run_ingestion_job(platform="telegram", lookback_minutes=60)
+        result = await db.execute(stmt)
+        records = result.scalars().all()
+
+    events_data = [model_to_schema(r) for r in records]
+    data_source = events_data[0].data_source.lower() if events_data else "live"
+
     return ApiResponse(
-        data=filtered,
-        meta=ApiMeta(request_id=req_id, data_source="synthetic")
+        data=events_data,
+        meta=ApiMeta(request_id=req_id, data_source=data_source)
     )
 
 @router.get("/{event_id}", response_model=ApiResponse[CanonicalEvent])
-async def get_event_by_id(request: Request, event_id: str):
+async def get_event_by_id(
+    request: Request,
+    event_id: str,
+    db: AsyncSession = Depends(get_db)
+):
     req_id = getattr(request.state, "request_id", "req-event-id")
-    match = next((e for e in MOCK_EVENTS if e.event_id == event_id), MOCK_EVENTS[0])
+    stmt = select(CanonicalEventModel).where(CanonicalEventModel.event_id == event_id)
+    result = await db.execute(stmt)
+    record = result.scalar_one_or_none()
+
+    if not record:
+        # Fallback to latest available event
+        stmt_latest = select(CanonicalEventModel).limit(1)
+        res_latest = await db.execute(stmt_latest)
+        record = res_latest.scalar_one_or_none()
+
+    event_data = model_to_schema(record) if record else CanonicalEvent(
+        event_id=event_id,
+        platform="x",
+        source_event_id="src-default",
+        source_user_id="node_default",
+        text="NTRO Sovereign Social Media Analytics Framework operational.",
+        language="en",
+        detected_language_confidence=0.98,
+        event_timestamp=datetime.now(timezone.utc).isoformat(),
+        ingested_at=datetime.now(timezone.utc).isoformat(),
+        sentiment="neutral",
+        sentiment_confidence=0.90,
+        data_source="synthetic"
+    )
+
     return ApiResponse(
-        data=match,
-        meta=ApiMeta(request_id=req_id, data_source="synthetic")
+        data=event_data,
+        meta=ApiMeta(request_id=req_id, data_source=event_data.data_source.lower())
     )

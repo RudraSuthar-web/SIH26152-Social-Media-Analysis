@@ -8,7 +8,7 @@ app:
   jwt_algorithm: "HS256"
 
 database:
-  url: "sqlite+aiosqlite:///./social_analytics.db"
+  url: "postgresql+asyncpg://analytics:changeme_secure_password@localhost:5432/social_analytics"
   pool_size: 20
 
 redis:

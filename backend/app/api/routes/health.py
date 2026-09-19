@@ -24,51 +24,6 @@ async def get_overview_metrics(request: Request):
         meta=ApiMeta(request_id=req_id, data_source="synthetic")
     )
 
-@router.get("/admin/ingestion/status", response_model=ApiResponse[list[AdapterHealth]])
-async def get_adapter_health(request: Request):
-    req_id = getattr(request.state, "request_id", "req-adapter-health")
-    adapters = [
-        AdapterHealth(
-            platform="x",
-            enabled=True,
-            healthy=True,
-            status="healthy",
-            lag_seconds=0.8,
-            rate_limit_usage_pct=34,
-            events_ingested_24h=89400,
-            last_success_at=datetime.now(timezone.utc).isoformat(),
-            error_count=2
-        ),
-        AdapterHealth(
-            platform="telegram",
-            enabled=True,
-            healthy=True,
-            status="healthy",
-            lag_seconds=1.2,
-            rate_limit_usage_pct=18,
-            events_ingested_24h=42100,
-            last_success_at=datetime.now(timezone.utc).isoformat(),
-            error_count=0
-        )
-    ]
-    return ApiResponse(
-        data=adapters,
-        meta=ApiMeta(request_id=req_id, data_source="synthetic")
-    )
-
-@router.post("/admin/ingestion/trigger", response_model=ApiResponse[BackfillJobResponse])
-async def trigger_ingestion(request: Request, body: BackfillRequest = Body(...)):
-    req_id = getattr(request.state, "request_id", "req-ingest-trigger")
-    job = BackfillJobResponse(
-        job_id=f"job-{body.platform}-{int(datetime.now(timezone.utc).timestamp())}",
-        platform=body.platform,
-        status="scheduled",
-        scheduled_at=datetime.now(timezone.utc).isoformat()
-    )
-    return ApiResponse(
-        data=job,
-        meta=ApiMeta(request_id=req_id, data_source="synthetic")
-    )
 
 @router.get("/admin/models/status", response_model=ApiResponse[list[ModelHealth]])
 async def get_model_health(request: Request):

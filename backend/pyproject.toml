@@ -6,7 +6,6 @@ build-backend = "setuptools.build_meta"
 name = "sih26152-social-media-analytics-backend"
 version = "1.0.0"
 description = "Sovereign AI-Driven Social Media Analytics & Threat Intelligence Backend (SIH 2026 - NTRO)"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi>=0.110.0",
@@ -26,6 +25,10 @@ dependencies = [
     "pyyaml>=6.0.1"
 ]
 
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["app*"]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.1.0",
@@ -35,4 +38,5 @@ dev = [
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
+asyncio_default_test_loop_scope = "session"
 testpaths = ["tests"]

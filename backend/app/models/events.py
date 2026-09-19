@@ -11,6 +11,7 @@ class CanonicalEventModel(Base):
     platform: Mapped[str] = mapped_column(String(32), nullable=False)
     source_event_id: Mapped[str] = mapped_column(String(128), nullable=False)
     source_user_id: Mapped[str] = mapped_column(String(128), nullable=False)
+    node_id: Mapped[str] = mapped_column(String(64), nullable=True)
     text: Mapped[str] = mapped_column(Text, nullable=False)
     language: Mapped[str] = mapped_column(String(16), default="en")
     detected_language_confidence: Mapped[float] = mapped_column(Float, default=0.95)

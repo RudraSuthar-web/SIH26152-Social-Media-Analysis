@@ -5,7 +5,7 @@ class DemographicAggregate(BaseModel):
     window: str
     topic: str
     sample_size: int
-    confidence_label: Literal["estimated", "inferred", "uncertain"]
+    confidence_label: Literal["estimated", "inferred", "uncertain", "high", "medium", "low", "HIGH", "MEDIUM", "LOW"]
     age_brackets: dict[str, float]
     age_confidence_intervals: Optional[dict[str, list[float]]] = None
     languages: dict[str, float]
