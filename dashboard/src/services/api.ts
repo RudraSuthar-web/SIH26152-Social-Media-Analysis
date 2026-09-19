@@ -73,14 +73,11 @@ export const apiService = {
     fetchEnvelope('/admin/ingestion/dead-letters', mockDeadLetterData),
 
   getCanonicalEvents: (platform: PlatformType = 'all'): Promise<ApiResponse<CanonicalEvent[]>> => {
-    if (platform === 'all') {
-      return fetchEnvelope('/events', mockEventsData);
-    }
-    const filteredEvents = mockEventsData.data.filter(e => e.platform === platform);
-    return Promise.resolve({
-      ...mockEventsData,
-      data: filteredEvents
-    });
+    const url = platform === 'all' ? '/events' : `/events?platform=${platform}`;
+    const fallback = platform === 'all'
+      ? mockEventsData
+      : { ...mockEventsData, data: mockEventsData.data.filter(e => e.platform === platform) };
+    return fetchEnvelope(url, fallback);
   },
 
   getEmotionAggregate: (): Promise<ApiResponse<EmotionBreakdown>> =>

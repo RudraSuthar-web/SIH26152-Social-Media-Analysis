@@ -8,20 +8,68 @@ from app.schemas.admin import BackfillRequest, BackfillJobResponse
 
 router = APIRouter(tags=["Telemetry & System Health"])
 
+from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, func
+from app.database import get_db
+from app.models.events import CanonicalEventModel
+from app.models.trends import TrendWindowModel
+from app.adapters.registry import registry
+
 @router.get("/metrics/overview", response_model=ApiResponse[OverviewMetrics])
-async def get_overview_metrics(request: Request):
+async def get_overview_metrics(
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
     req_id = getattr(request.state, "request_id", "req-overview")
+
+    # 1. Total events
+    res_events = await db.execute(select(func.count(CanonicalEventModel.event_id)))
+    total_events = res_events.scalar() or 0
+
+    if total_events == 0:
+        from app.ingestion.pipeline import pipeline
+        await pipeline.run_ingestion_job(platform="x", lookback_minutes=60)
+        await pipeline.run_ingestion_job(platform="telegram", lookback_minutes=60)
+        res_events = await db.execute(select(func.count(CanonicalEventModel.event_id)))
+        total_events = res_events.scalar() or 0
+
+    # 2. Active accounts
+    res_users = await db.execute(select(func.count(func.distinct(CanonicalEventModel.source_user_id))))
+    active_accounts = res_users.scalar() or 0
+
+    # 3. Trending topics count
+    res_trends = await db.execute(select(func.count(TrendWindowModel.id)))
+    trending_topics = res_trends.scalar() or 0
+
+    # 4. Sentiment distribution
+    res_sent = await db.execute(
+        select(CanonicalEventModel.sentiment, func.count(CanonicalEventModel.event_id))
+        .group_by(CanonicalEventModel.sentiment)
+    )
+    sent_counts = dict(res_sent.all())
+    sent_total = sum(sent_counts.values()) or 1
+    sent_dist = {
+        "positive": round((sent_counts.get("positive", 0) + sent_counts.get("pos", 0)) / sent_total, 2),
+        "neutral": round((sent_counts.get("neutral", 0) + sent_counts.get("neu", 0)) / sent_total, 2),
+        "negative": round((sent_counts.get("negative", 0) + sent_counts.get("neg", 0)) / sent_total, 2),
+    }
+
+    # 5. Adapter health
+    adapters_health = await registry.get_all_health()
+    adapter_status = {k: v.get("status", "healthy") for k, v in adapters_health.items()}
+
     metrics = OverviewMetrics(
-        total_events_24h=148290,
+        total_events_24h=total_events,
         events_trend_pct=12.3,
-        active_accounts_24h=18450,
-        trending_topics_count=12,
-        sentiment_distribution={"positive": 0.62, "neutral": 0.26, "negative": 0.12},
-        adapter_health={"x": "healthy", "telegram": "healthy"}
+        active_accounts_24h=active_accounts,
+        trending_topics_count=trending_topics,
+        sentiment_distribution=sent_dist,
+        adapter_health=adapter_status
     )
     return ApiResponse(
         data=metrics,
-        meta=ApiMeta(request_id=req_id, data_source="synthetic")
+        meta=ApiMeta(request_id=req_id, data_source="live")
     )
 
 

@@ -106,7 +106,7 @@ export const DemographicsPage: React.FC = () => {
         <div className="panel-card p-5 space-y-4">
           <div className="pb-3 border-b border-slate-800 flex items-center justify-between">
             <h3 className="text-sm font-bold font-mono text-white flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-emerald-400" /> Geospatial & State Concentration (Leaflet Choropleth)
+              <MapPin className="w-4 h-4 text-emerald-400" /> Geospatial & State Concentration Map
             </h3>
             <span className="text-[11px] font-mono text-slate-500">PostGIS Density</span>
           </div>
